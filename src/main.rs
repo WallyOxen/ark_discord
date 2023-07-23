@@ -10,7 +10,9 @@ use serenity::model::gateway::Ready;
 use serenity::model::prelude::GuildId;
 use serenity::prelude::*;
 
-struct Handler;
+struct Handler {
+    database: sqlx::PgPool
+}
 
 #[async_trait] 
 impl EventHandler for Handler {
@@ -20,6 +22,7 @@ impl EventHandler for Handler {
 
             if let Err(why) = match command.data.name.as_str() {
                 "ping" => commands::ping::run(&ctx, &command).await,
+                "add" => commands::add_suggestion::run(&self.database, &ctx, &command).await,
                 _ => {
                     command
                         .create_interaction_response(&ctx.http, |response| {
@@ -49,6 +52,7 @@ impl EventHandler for Handler {
         let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
             commands
                 .create_application_command(|command| commands::ping::register(command))
+                .create_application_command(|command| commands::add_suggestion::register(command))
         })
         .await;
 
@@ -62,8 +66,18 @@ async fn main() {
     
     let token = var("DISCORD_TOKEN").expect("Missing `DISCORD_TOKEN` env var");
 
+    let database = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(var("DATABASE_URL").expect("Missing `DATABASE_URL` env var").as_str())
+        .await
+        .expect("Couldn't connect to database");
+
+    let bot = Handler {
+        database
+    };
+
     let mut client = Client::builder(token, GatewayIntents::empty())
-        .event_handler(Handler)
+        .event_handler(bot)
         .await
         .expect("Error creating client!");
 

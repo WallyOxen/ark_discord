@@ -1,0 +1,8 @@
+-- Add up migration script here
+CREATE TABLE IF NOT EXISTS suggestions (
+  id UUID PRIMARY KEY NOT NULL,
+  value VARCHAR(255) NOT NULL,
+  userId VARCHAR(255) NOT NULL,
+  userName VARCHAR(255) NOT NULL,
+  removed BOOLEAN NOT NULL DEFAULT FALSE
+)
