@@ -1,8 +1,25 @@
-use serenity::model::application::interaction::InteractionResponseType;
-use serenity::model::application::interaction::modal::ModalSubmitInteraction;
-use serenity::model::prelude::component::ActionRowComponent;
+use serenity::model::prelude::InteractionResponseType;
+use serenity::model::prelude::application_command::ApplicationCommandInteraction;
+use serenity::model::prelude::component::{InputTextStyle, ActionRowComponent};
+use serenity::model::prelude::modal::ModalSubmitInteraction;
 use serenity::prelude::*;
+
 use uuid::Uuid;
+
+pub async fn create(command: &ApplicationCommandInteraction, ctx: &Context) -> Result<(), SerenityError> {
+  command.create_interaction_response(&ctx.http, |response| {
+    response
+      .kind(InteractionResponseType::Modal)
+      .interaction_response_data(|m| m.title("Make a tribe name suggestion").custom_id("tribename.addsuggestion").components(|c| {
+        c.create_action_row(|row| {
+          row.create_input_text(|input| {
+            input.custom_id("suggestion").label("Suggestion").style(InputTextStyle::Short)
+          })
+        })
+      }))
+  })
+  .await
+}
 
 pub async fn run(db: &sqlx::PgPool, ctx: &Context, command: &ModalSubmitInteraction) -> Result<(), SerenityError> {
   let inputs: Vec<String> = command
@@ -28,7 +45,7 @@ pub async fn run(db: &sqlx::PgPool, ctx: &Context, command: &ModalSubmitInteract
         .kind(InteractionResponseType::ChannelMessageWithSource)
         .interaction_response_data(|m| m.content(format!("{} has already been suggested!", &suggestion)).ephemeral(true))
     })
-    .await;
+    .await
   }
   
   sqlx::query!("INSERT INTO suggestions (id, value, userid, username) VALUES ($1, $2, $3, $4)",

@@ -1,4 +1,5 @@
 mod commands;
+mod modals;
 
 use std::env::var;
 
@@ -42,7 +43,7 @@ impl EventHandler for Handler {
             println!("Received modal submit interaction: {:#?}", command);
 
             if let Err(why) = match command.data.custom_id.as_str() {
-                "testmodal1" => commands::handle_testmodal1::run(&self.database, &ctx, &command).await,
+                "tribename.addsuggestion" => modals::add::run(&self.database, &ctx, &command).await,
                 _ => {
                     command
                         .create_interaction_response(&ctx.http, |response| {
