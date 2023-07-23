@@ -18,18 +18,18 @@ impl EventHandler for Handler {
         if let Interaction::ApplicationCommand(command) = interaction {
             println!("Received command interaction: {:#?}", command);
 
-            let content = match command.data.name.as_str() {
-                "ping" => commands::ping::run(&command.data.options),
-                _ => "not implemented :(".to_string()
-            };
-
-            if let Err(why) = command
-                .create_interaction_response(&ctx.http, |response| {
-                    response
-                        .kind(InteractionResponseType::ChannelMessageWithSource)
-                        .interaction_response_data(|m| m.content(content))
-                })
-                .await
+            if let Err(why) = match command.data.name.as_str() {
+                "ping" => commands::ping::run(&ctx, &command).await,
+                _ => {
+                    command
+                        .create_interaction_response(&ctx.http, |response| {
+                            response
+                                .kind(InteractionResponseType::ChannelMessageWithSource)
+                                .interaction_response_data(|m| m.content("Not implemented :("))
+                        })
+                        .await
+                }
+            }
             {
                 println!("Cannot respond to slash command: {}", why);
             }

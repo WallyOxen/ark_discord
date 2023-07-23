@@ -1,7 +1,16 @@
-use serenity::{model::prelude::application_command::CommandDataOption, builder::CreateApplicationCommand};
+use serenity::builder::CreateApplicationCommand;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::prelude::*;
 
-pub fn run(_options: &[CommandDataOption]) -> String {
-  "Hey, I'm alive".to_string()
+
+pub async fn run(ctx: &Context, command: &ApplicationCommandInteraction) -> Result<(), SerenityError> {
+  command.create_interaction_response(&ctx.http, |response| {
+    response
+      .kind(InteractionResponseType::ChannelMessageWithSource)
+      .interaction_response_data(|m| m.content("Hey, I'm still alive!"))
+  })
+  .await
 }
 
 pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicationCommand {
