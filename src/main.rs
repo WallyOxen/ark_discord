@@ -23,6 +23,7 @@ impl EventHandler for Handler {
             if let Err(why) = match command.data.name.as_str() {
                 "ping" => commands::ping::run(&ctx, &command).await,
                 "add" => commands::add_suggestion::run(&self.database, &ctx, &command).await,
+                "modal" => commands::modal_test::run(&ctx, &command).await,
                 _ => {
                     command
                         .create_interaction_response(&ctx.http, |response| {
@@ -35,6 +36,25 @@ impl EventHandler for Handler {
             }
             {
                 println!("Cannot respond to slash command: {}", why);
+            }
+        }
+        else if let Interaction::ModalSubmit(command) = interaction {
+            println!("Received modal submit interaction: {:#?}", command);
+
+            if let Err(why) = match command.data.custom_id.as_str() {
+                "testmodal1" => commands::handle_testmodal1::run(&self.database, &ctx, &command).await,
+                _ => {
+                    command
+                        .create_interaction_response(&ctx.http, |response| {
+                            response
+                                .kind(InteractionResponseType::ChannelMessageWithSource)
+                                .interaction_response_data(|m| m.content("Not implemented :("))
+                        })
+                        .await
+                }
+            }
+            {
+                println!("Cannot respond to modal: {}", why);
             }
         }
     }
@@ -53,6 +73,7 @@ impl EventHandler for Handler {
             commands
                 .create_application_command(|command| commands::ping::register(command))
                 .create_application_command(|command| commands::add_suggestion::register(command))
+                .create_application_command(|command| commands::modal_test::register(command))
         })
         .await;
 
