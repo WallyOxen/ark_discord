@@ -1,12 +1,14 @@
+use std::fmt::Write as _;
+
 use serenity::model::prelude::InteractionResponseType;
-use serenity::model::prelude::application_command::ApplicationCommandInteraction;
-use serenity::model::prelude::component::{InputTextStyle, ActionRowComponent};
+use serenity::model::prelude::component::{InputTextStyle, ActionRowComponent, ButtonStyle};
+use serenity::model::prelude::message_component::MessageComponentInteraction;
 use serenity::model::prelude::modal::ModalSubmitInteraction;
 use serenity::prelude::*;
 
 use uuid::Uuid;
 
-pub async fn create(command: &ApplicationCommandInteraction, ctx: &Context) -> Result<(), SerenityError> {
+pub async fn create(command: &MessageComponentInteraction, ctx: &Context) -> Result<(), SerenityError> {
   command.create_interaction_response(&ctx.http, |response| {
     response
       .kind(InteractionResponseType::Modal)
@@ -58,10 +60,34 @@ pub async fn run(db: &sqlx::PgPool, ctx: &Context, command: &ModalSubmitInteract
   .await
   .unwrap();
 
+  let suggestions = sqlx::query!("SELECT value FROM suggestions")
+    .fetch_all(db)
+    .await
+    .unwrap();
+
+  let mut content = format!("There are {} suggestions!\n", suggestions.len());
+
+  for (i, suggestion) in suggestions.iter().enumerate() {
+    writeln!(content, "{}. {}", i + 1, suggestion.value).unwrap();
+  }
+
   command.create_interaction_response(&ctx.http, |response| {
     response
       .kind(InteractionResponseType::ChannelMessageWithSource)
-      .interaction_response_data(|m| m.content(format!("Successfully added {}", &suggestion)).ephemeral(true))
+      .interaction_response_data(|m| {
+        m
+          .content(content)
+          .components(|components| {
+            components.create_action_row(|row| {
+              row.create_button(|button| {
+                button
+                  .custom_id("tribename.addsuggestion")
+                  .label("Make a Suggestion")
+                  .style(ButtonStyle::Success)
+              })
+            })
+          })
+    })
   })
   .await
 }

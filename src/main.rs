@@ -24,13 +24,13 @@ impl EventHandler for Handler {
             if let Err(why) = match command.data.name.as_str() {
                 "ping" => commands::ping::run(&ctx, &command).await,
                 "add" => commands::add_suggestion::run(&self.database, &ctx, &command).await,
-                "modal" => commands::modal_test::run(&ctx, &command).await,
+                "list-suggestions" => commands::list_suggestions::run(&self.database, &ctx, &command).await,
                 _ => {
                     command
                         .create_interaction_response(&ctx.http, |response| {
                             response
                                 .kind(InteractionResponseType::ChannelMessageWithSource)
-                                .interaction_response_data(|m| m.content("Not implemented :("))
+                                .interaction_response_data(|m| m.content(format!("{} not implemented :(", command.data.name)).ephemeral(true))
                         })
                         .await
                 }
@@ -49,13 +49,32 @@ impl EventHandler for Handler {
                         .create_interaction_response(&ctx.http, |response| {
                             response
                                 .kind(InteractionResponseType::ChannelMessageWithSource)
-                                .interaction_response_data(|m| m.content("Not implemented :("))
+                                .interaction_response_data(|m| m.content(format!("{} not implemented :(", command.data.custom_id)).ephemeral(true))
                         })
                         .await
                 }
             }
             {
                 println!("Cannot respond to modal: {}", why);
+            }
+        }
+        else if let Interaction::MessageComponent(command) = interaction {
+            println!("Received message component interaction: {:#?}", command);
+
+            if let Err(why) = match command.data.custom_id.as_str() {
+                "tribename.addsuggestion" => modals::add::create(&command, &ctx).await,
+                _ => {
+                    command
+                        .create_interaction_response(&ctx.http, |response| {
+                            response
+                                .kind(InteractionResponseType::ChannelMessageWithSource)
+                                .interaction_response_data(|m| m.content(format!("{} not implemented :(", command.data.custom_id)).ephemeral(true))
+                        })
+                        .await
+                }
+            }
+            {
+                println!("Cannot respond to message component: {}", why);
             }
         }
     }
@@ -74,7 +93,7 @@ impl EventHandler for Handler {
             commands
                 .create_application_command(|command| commands::ping::register(command))
                 .create_application_command(|command| commands::add_suggestion::register(command))
-                .create_application_command(|command| commands::modal_test::register(command))
+                .create_application_command(|command| commands::list_suggestions::register(command))
         })
         .await;
 
