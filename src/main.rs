@@ -19,7 +19,8 @@ struct Handler {
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
-            println!("Received command interaction: {:#?}", command);
+            // println!("Received command interaction: {:#?}", command);
+            println!("{} used slash command: {}", command.user.name, command.data.name);
 
             if let Err(why) = match command.data.name.as_str() {
                 "ping" => commands::ping::run(&ctx, &command).await,
@@ -40,7 +41,8 @@ impl EventHandler for Handler {
             }
         }
         else if let Interaction::ModalSubmit(command) = interaction {
-            println!("Received modal submit interaction: {:#?}", command);
+            // println!("Received modal submit interaction: {:#?}", command);
+            println!("{} submitted the modal {}", command.user.name, command.data.custom_id);
 
             if let Err(why) = match command.data.custom_id.as_str() {
                 "tribename.addsuggestion" => modals::add::run(&self.database, &ctx, &command).await,
@@ -59,7 +61,8 @@ impl EventHandler for Handler {
             }
         }
         else if let Interaction::MessageComponent(command) = interaction {
-            println!("Received message component interaction: {:#?}", command);
+            // println!("Received message component interaction: {:#?}", command);
+            println!("{} clicked the button {}", command.user.name, command.data.custom_id);
 
             if let Err(why) = match command.data.custom_id.as_str() {
                 "tribename.addsuggestion" => modals::add::create(&command, &ctx).await,
@@ -91,8 +94,8 @@ impl EventHandler for Handler {
 
         let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
             commands
-                .create_application_command(|command| commands::ping::register(command))
-                .create_application_command(|command| commands::add_suggestion::register(command))
+                // .create_application_command(|command| commands::ping::register(command))
+                // .create_application_command(|command| commands::add_suggestion::register(command))
                 .create_application_command(|command| commands::list_suggestions::register(command))
         })
         .await;
