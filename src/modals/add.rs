@@ -73,7 +73,7 @@ pub async fn run(db: &sqlx::PgPool, ctx: &Context, command: &ModalSubmitInteract
 
   command.create_interaction_response(&ctx.http, |response| {
     response
-      .kind(InteractionResponseType::ChannelMessageWithSource)
+      .kind(InteractionResponseType::UpdateMessage)
       .interaction_response_data(|m| {
         m
           .content(content)
